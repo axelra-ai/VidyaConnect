@@ -237,8 +237,17 @@
 // ======= CONFIG: fill these in with your Supabase project =======
 const SUPABASE_URL = "https://dqrrmxawowoxrqukronq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_C2r3bKoE9QDu9GeJHFa1Hw_Ztv5OuHX";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// ==================================================================
+let sb = null;
+let sbError = null;
+try{
+  if(!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE')){
+    throw new Error('Supabase URL/Key not set yet');
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}catch(e){
+  sbError = e.message;
+  console.error('Supabase init failed:', e);
+}
 
 let state = { role:null, itype:null };
 
@@ -295,6 +304,7 @@ function showMsg(id, text, ok=false){
 }
 
 async function doLogin(){
+  if(!sb){ showMsg('loginMsg', 'App is not connected to the database yet (Supabase URL/Key missing). Ask whoever set up the app to fix this.'); return; }
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   if(!email || !password){ showMsg('loginMsg','Enter email and password.'); return; }
@@ -307,6 +317,7 @@ async function doLogin(){
 }
 
 async function doSignup(){
+  if(!sb){ showMsg('signupMsg', 'App is not connected to the database yet (Supabase URL/Key missing). Ask whoever set up the app to fix this.'); return; }
   const fullName = document.getElementById('fullName').value.trim();
   const age = parseInt(document.getElementById('age').value) || null;
   const mobile = document.getElementById('mobile').value.trim();
