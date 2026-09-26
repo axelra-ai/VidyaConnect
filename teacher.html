@@ -1,1 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VidyaConnect — Teacher</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/2.45.4/supabase.min.js"></script>
+<style>
+  :root{ --navy:#16294D; --navy-2:#1F3A6E; --gold:#E9A23B; --bg:#F5F7FB; --card:#fff; --text:#1A1E2B; --muted:#6B7280; --line:#E4E8F0; --ok:#2E7D5B; --danger:#C0392B; }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); padding-bottom:78px;}
+  header{background:var(--navy); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5;}
+  header h1{font-family:'Poppins'; font-size:16px; margin:0;}
+  header .role{font-size:11px; background:var(--gold); color:var(--navy); padding:3px 9px; border-radius:20px; font-weight:600;}
+  .page{padding:16px; max-width:640px; margin:0 auto;}
+  .hidden{display:none !important;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px;}
+  .fab{
+    position:fixed; right:20px; bottom:90px; width:52px; height:52px; border-radius:50%;
+    background:var(--gold); color:var(--navy); border:none; font-size:26px; font-weight:700;
+    box-shadow:0 8px 20px rgba(233,162,59,0.4); cursor:pointer; z-index:6;
+  }
+  .post{margin-bottom:12px;}
+  .post .who{font-weight:600; font-size:14px;}
+  .post .when{font-size:11.5px; color:var(--muted); margin-bottom:6px;}
+  .post .body{font-size:14.5px; line-height:1.5;}
+  .composer{position:fixed; inset:0; background:rgba(22,41,77,0.45); display:flex; align-items:flex-end; z-index:10;}
+  .composer .sheet{background:#fff; width:100%; border-radius:18px 18px 0 0; padding:20px;}
+  textarea{width:100%; min-height:110px; border:1.5px solid var(--line); border-radius:10px; padding:10px; font-family:inherit; font-size:14.5px;}
+  .btn{padding:11px 16px; border:none; border-radius:9px; background:var(--navy); color:#fff; font-weight:600; cursor:pointer; font-size:14px;}
+  .btn.ghost{background:transparent; color:var(--navy); border:1.5px solid var(--line);}
+  .row-btns{display:flex; gap:10px; margin-top:12px;}
+  .list-item{display:flex; justify-content:space-between; align-items:center; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .list-item:last-child{border-bottom:none;}
+  .list-item .name{font-weight:600; font-size:14.5px;}
+  .list-item .sub{font-size:12px; color:var(--muted);}
+  .chev{color:var(--muted);}
+  .crumbs{font-size:13px; color:var(--muted); margin-bottom:10px;}
+  .crumbs span{color:var(--navy); cursor:pointer; font-weight:600;}
+  .detail-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row .k{color:var(--muted);}
+  .attend-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line);}
+  .seg{display:flex; border:1.5px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{border:none; background:#fff; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--muted);}
+  .seg button.active.present{background:#EAF5EF; color:var(--ok);}
+  .seg button.active.absent{background:#FDECEA; color:var(--danger);}
+  .badge{font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;}
+  .badge.pending{background:#FFF4E0; color:#B7791F;}
+  .badge.approved{background:#EAF5EF; color:var(--ok);}
+  .badge.rejected{background:#FDECEA; color:var(--danger);}
+  nav.tabbar{position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line); display:flex; z-index:6;}
+  nav.tabbar div{flex:1; text-align:center; padding:10px 0 8px; font-size:11.5px; color:var(--muted); cursor:pointer; font-weight:600;}
+  nav.tabbar div.active{color:var(--navy);}
+  nav.tabbar div .ic{font-size:19px; display:block; margin-bottom:2px;}
+  select,input{width:100%; padding:9px 10px; border:1.5px solid var(--line); border-radius:8px; font-size:14px; margin-top:4px; margin-bottom:12px;}
+  label{font-size:12.5px; font-weight:600; color:var(--muted);}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="headerName">VidyaConnect</h1>
+  <span class="role">TEACHER</span>
+</header>
+
+<!-- ============ HOME ============ -->
+<div class="page" id="pane-home">
+  <div id="feedList"><p style="color:var(--muted); font-size:13.5px;">Loading feed…</p></div>
+</div>
+<button class="fab" id="fabBtn" onclick="openComposer()">+</button>
+
+<!-- ============ STUDENTS ============ -->
+<div class="page hidden" id="pane-students">
+  <div class="crumbs" id="stuCrumbs">All classes / semesters</div>
+  <div class="card" id="stuListCard"></div>
+</div>
+
+<!-- ============ TEACHERS ============ -->
+<div class="page hidden" id="pane-teachers">
+  <div class="card" id="teacherListCard"><p style="color:var(--muted); font-size:13.5px;">Loading…</p></div>
+</div>
+
+<!-- ============ PROFILE ============ -->
+<div class="page hidden" id="pane-profile">
+  <div class="card" id="myProfileCard"></div>
+
+  <div class="card">
+    <h3 style="margin-top:0; font-family:'Poppins'; font-size:15px;">Mark attendance</h3>
+    <label>Class / Section / Semester</label>
+    <select id="attendClassPicker" onchange="loadAttendanceList()"></select>
+    <div id="attendList"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; font-family:'Poppins'; font-size:15px;">Leave requests</h3>
+    <div id="leaveReviewList"><p style="color:var(--muted); font-size:13px;">No requests yet.</p></div>
+  </div>
+</div>
+
+<!-- ============ PERSON DETAIL (overlay) ============ -->
+<div class="page hidden" id="pane-personDetail">
+  <div class="crumbs"><span onclick="closePersonDetail()">← Back</span></div>
+  <div class="card" id="personDetailCard"></div>
+</div>
+
+<!-- ============ COMPOSER ============ -->
+<div class="composer hidden" id="composer">
+  <div class="sheet">
+    <h3 style="margin:0 0 10px; font-family:'Poppins';">Post an update</h3>
+    <textarea id="postText" placeholder="Write an announcement for everyone at your institute…"></textarea>
+    <div class="row-btns">
+      <button class="btn" onclick="submitPost()">Post</button>
+      <button class="btn ghost" onclick="closeComposer()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <div class="active" onclick="switchTab('home')"><span class="ic">🏠</span>Home</div>
+  <div onclick="switchTab('students')"><span class="ic">🎓</span>Students</div>
+  <div onclick="switchTab('teachers')"><span class="ic">🧑‍🏫</span>Teachers</div>
+  <div onclick="switchTab('profile')"><span class="ic">👤</span>Profile</div>
+</nav>
+
+<script>
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let me = null; // current teacher profile row
+
+async function boot(){
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){ window.location.href = 'index.html'; return; }
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if(!profile || profile.role !== 'teacher'){ window.location.href = 'index.html'; return; }
+  me = profile;
+  document.getElementById('headerName').textContent = `Hi, ${me.full_name.split(' ')[0]}`;
+  loadFeed();
+  loadMyProfileCard();
+  buildAttendClassPicker();
+  loadLeaveRequests();
+}
+boot();
+
+function switchTab(tab){
+  ['home','students','teachers','profile'].forEach(t=>{
+    document.getElementById('pane-'+t).classList.toggle('hidden', t!==tab);
+  });
+  document.getElementById('pane-personDetail').classList.add('hidden');
+  document.querySelectorAll('nav.tabbar div').forEach((el,i)=>{
+    el.classList.toggle('active', ['home','students','teachers','profile'][i]===tab);
+  });
+  document.getElementById('fabBtn').classList.toggle('hidden', tab!=='home');
+  if(tab==='students') loadStudentsRoot();
+  if(tab==='teachers') loadTeachersList();
+}
+
+// ---------- HOME / FEED ----------
+function openComposer(){ document.getElementById('composer').classList.remove('hidden'); }
+function closeComposer(){ document.getElementById('composer').classList.add('hidden'); document.getElementById('postText').value=''; }
+
+async function submitPost(){
+  const content = document.getElementById('postText').value.trim();
+  if(!content) return;
+  await sb.from('posts').insert({ institute_id: me.institute_id, author_id: me.id, content });
+  closeComposer();
+  loadFeed();
+}
+
+async function loadFeed(){
+  const { data: posts } = await sb.from('posts')
+    .select('*, profiles!posts_author_id_fkey(full_name, role)')
+    .eq('institute_id', me.institute_id).order('created_at', { ascending:false }).limit(50);
+  const el = document.getElementById('feedList');
+  if(!posts || posts.length===0){ el.innerHTML = '<p style="color:var(--muted); font-size:13.5px;">No updates yet. Tap + to post one.</p>'; return; }
+  el.innerHTML = posts.map(p=>`
+    <div class="card post">
+      <div class="who">${p.profiles?.full_name || 'Unknown'}</div>
+      <div class="when">${new Date(p.created_at).toLocaleString()}</div>
+      <div class="body">${escapeHtml(p.content)}</div>
+    </div>`).join('');
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---------- STUDENTS DRILL-DOWN ----------
+let stuNav = { level:'root', group:null };
+
+async function loadStudentsRoot(){
+  stuNav = { level:'root' };
+  const { data } = await sb.from('profiles').select('class, section, course, branch, semester')
+    .eq('institute_id', me.institute_id).eq('role','student');
+  const groups = new Set();
+  (data||[]).forEach(s=>{
+    if(s.class) groups.add(`School • Class ${s.class}${s.section? ' - '+s.section:''}`);
+    else if(s.course) groups.add(`${s.course}${s.branch? ' • '+s.branch:''} • Sem ${s.semester||'-'}`);
+  });
+  document.getElementById('stuCrumbs').innerHTML = 'All classes / semesters';
+  const list = [...groups].sort();
+  document.getElementById('stuListCard').innerHTML = list.length
+    ? list.map(g=>`<div class="list-item" onclick="loadStudentsInGroup('${g.replace(/'/g,"\\'")}')"><div><div class="name">${g}</div></div><div class="chev">›</div></div>`).join('')
+    : '<p style="color:var(--muted); font-size:13.5px;">No students yet.</p>';
+}
+
+async function loadStudentsInGroup(groupLabel){
+  const { data } = await sb.from('profiles').select('*').eq('institute_id', me.institute_id).eq('role','student');
+  const filtered = (data||[]).filter(s=>{
+    const label = s.class ? `School • Class ${s.class}${s.section? ' - '+s.section:''}` : `${s.course}${s.branch? ' • '+s.branch:''} • Sem ${s.semester||'-'}`;
+    return label === groupLabel;
+  });
+  document.getElementById('stuCrumbs').innerHTML = `<span onclick="loadStudentsRoot()">All classes</span> / ${groupLabel}`;
+  document.getElementById('stuListCard').innerHTML = filtered.length
+    ? filtered.map(s=>`<div class="list-item" onclick='openPersonDetail(${JSON.stringify(s).replace(/'/g,"&#39;")})'><div><div class="name">${s.full_name}</div><div class="sub">Roll No. ${s.roll_number||'-'}</div></div><div class="chev">›</div></div>`).join('')
+    : '<p style="color:var(--muted); font-size:13.5px;">No students in this group.</p>';
+}
+
+// ---------- TEACHERS LIST ----------
+async function loadTeachersList(){
+  const { data } = await sb.from('profiles').select('*').eq('institute_id', me.institute_id).eq('role','teacher');
+  document.getElementById('teacherListCard').innerHTML = (data||[]).map(t=>`
+    <div class="list-item" onclick='openPersonDetail(${JSON.stringify(t).replace(/'/g,"&#39;")})'>
+      <div><div class="name">${t.full_name}</div><div class="sub">${t.subject||'—'}</div></div>
+      <div class="chev">›</div>
+    </div>`).join('') || '<p style="color:var(--muted); font-size:13.5px;">No teachers yet.</p>';
+}
+
+// ---------- PERSON DETAIL ----------
+function openPersonDetail(person){
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  document.getElementById('pane-personDetail').classList.remove('hidden');
+  const rows = [];
+  rows.push(['Role', person.role]);
+  rows.push(['Age', person.age||'-']);
+  rows.push(['Mobile', person.mobile]);
+  rows.push(['Email', person.email]);
+  if(person.role==='student'){
+    rows.push(['Roll number', person.roll_number||'-']);
+    if(person.class) { rows.push(['Class', person.class]); rows.push(['Section', person.section||'-']); if(person.stream) rows.push(['Stream', person.stream]); if(person.board) rows.push(['Board', person.board]); }
+    else { rows.push(['Course', person.course||'-']); if(person.branch) rows.push(['Branch', person.branch]); rows.push(['Semester', person.semester||'-']); }
+  } else {
+    rows.push(['Subject', person.subject||'-']);
+    rows.push(['Experience', (person.experience_years||0)+' yrs']);
+  }
+  document.getElementById('personDetailCard').innerHTML = `
+    <h2 style="font-family:'Poppins'; font-size:18px; margin:0 0 12px;">${person.full_name}</h2>
+    ${rows.map(([k,v])=>`<div class="detail-row"><span class="k">${k}</span><span>${v}</span></div>`).join('')}`;
+}
+function closePersonDetail(){
+  document.getElementById('pane-personDetail').classList.add('hidden');
+  switchTab(document.querySelector('nav.tabbar div.active') ? 'home':'home');
+}
+
+// ---------- PROFILE ----------
+function loadMyProfileCard(){
+  document.getElementById('myProfileCard').innerHTML = `
+    <h2 style="font-family:'Poppins'; font-size:18px; margin:0 0 12px;">${me.full_name}</h2>
+    <div class="detail-row"><span class="k">Age</span><span>${me.age||'-'}</span></div>
+    <div class="detail-row"><span class="k">Subject</span><span>${me.subject||'-'}</span></div>
+    <div class="detail-row"><span class="k">Experience</span><span>${me.experience_years||0} yrs</span></div>
+    <div class="detail-row"><span class="k">Mobile</span><span>${me.mobile}</span></div>
+    <div class="detail-row"><span class="k">Email</span><span>${me.email}</span></div>`;
+}
+
+async function buildAttendClassPicker(){
+  const { data } = await sb.from('profiles').select('class, section, course, branch, semester').eq('institute_id', me.institute_id).eq('role','student');
+  const groups = new Set();
+  (data||[]).forEach(s=>{
+    if(s.class) groups.add(`School • Class ${s.class}${s.section? ' - '+s.section:''}`);
+    else if(s.course) groups.add(`${s.course}${s.branch? ' • '+s.branch:''} • Sem ${s.semester||'-'}`);
+  });
+  const sel = document.getElementById('attendClassPicker');
+  sel.innerHTML = '<option value="">Select group</option>' + [...groups].sort().map(g=>`<option>${g}</option>`).join('');
+}
+
+async function loadAttendanceList(){
+  const groupLabel = document.getElementById('attendClassPicker').value;
+  if(!groupLabel){ document.getElementById('attendList').innerHTML=''; return; }
+  const { data } = await sb.from('profiles').select('*').eq('institute_id', me.institute_id).eq('role','student');
+  const filtered = (data||[]).filter(s=>{
+    const label = s.class ? `School • Class ${s.class}${s.section? ' - '+s.section:''}` : `${s.course}${s.branch? ' • '+s.branch:''} • Sem ${s.semester||'-'}`;
+    return label === groupLabel;
+  });
+  const today = new Date().toISOString().slice(0,10);
+  const { data: existing } = await sb.from('attendance').select('*').eq('date', today).in('student_id', filtered.map(f=>f.id));
+  const existingMap = {}; (existing||[]).forEach(e=> existingMap[e.student_id]=e.status);
+
+  document.getElementById('attendList').innerHTML = filtered.map(s=>`
+    <div class="attend-row">
+      <span>${s.full_name}</span>
+      <div class="seg">
+        <button class="${existingMap[s.id]==='present'?'active present':''}" onclick="markAttendance('${s.id}','present', this)">Present</button>
+        <button class="${existingMap[s.id]==='absent'?'active absent':''}" onclick="markAttendance('${s.id}','absent', this)">Absent</button>
+      </div>
+    </div>`).join('') || '<p style="color:var(--muted); font-size:13px;">No students in this group.</p>';
+}
+
+async function markAttendance(studentId, status, btnEl){
+  const today = new Date().toISOString().slice(0,10);
+  await sb.from('attendance').upsert({
+    institute_id: me.institute_id, student_id: studentId, marked_by: me.id, date: today, status
+  }, { onConflict: 'student_id,date' });
+  const row = btnEl.parentElement;
+  [...row.children].forEach(b=>b.classList.remove('active','present','absent'));
+  btnEl.classList.add('active', status);
+}
+
+async function loadLeaveRequests(){
+  const { data } = await sb.from('leave_requests')
+    .select('*, profiles!leave_requests_requester_id_fkey(full_name)')
+    .eq('institute_id', me.institute_id).order('created_at', { ascending:false });
+  const el = document.getElementById('leaveReviewList');
+  if(!data || data.length===0){ el.innerHTML = '<p style="color:var(--muted); font-size:13px;">No requests yet.</p>'; return; }
+  el.innerHTML = data.map(r=>`
+    <div class="detail-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+      <div style="display:flex; justify-content:space-between; width:100%;">
+        <strong>${r.profiles?.full_name||'Unknown'}</strong>
+        <span class="badge ${r.status}">${r.status}</span>
+      </div>
+      <div style="font-size:13px; color:var(--muted);">${r.date_from} → ${r.date_to}</div>
+      <div style="font-size:13.5px;">${escapeHtml(r.reason)}</div>
+      ${r.status==='pending' ? `<div class="row-btns" style="margin-top:6px;">
+        <button class="btn" style="padding:7px 12px; font-size:12.5px;" onclick="reviewLeave('${r.id}','approved')">Approve</button>
+        <button class="btn ghost" style="padding:7px 12px; font-size:12.5px;" onclick="reviewLeave('${r.id}','rejected')">Reject</button>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+async function reviewLeave(id, status){
+  await sb.from('leave_requests').update({ status, reviewed_by: me.id }).eq('id', id);
+  loadLeaveRequests();
+}
+</script>
+</body>
+</html>
 
